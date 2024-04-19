@@ -5,19 +5,19 @@ class TrainArgParser():
     def __init__(self):
         self.parser = argparse.ArgumentParser(description="DeepLab-ResNet Network")
 
-        self.IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32) # TODO: examine the dataset
+        self.IMG_MEAN = np.array((123.68748388, 118.66391674, 109.94100899), dtype=np.float32)
 
         self.MODEL = 'DeepLab'
         self.BATCH_SIZE = 10
         self.ITER_SIZE = 1
         self.NUM_WORKERS = 4
-        self.DATA_DIRECTORY = './dataset/ADE20K' # TODO: examine the dataset
-        self.DATA_LIST_PATH = './dataset/ADE_list/train_aug.txt' # TODO: examine the dataset
+        self.DATA_DIRECTORY = '../dataset/ADE20K_2021_17_01'
+        self.DATA_LIST_PATH = '../dataset/data/train_aug.txt'
         self.IGNORE_LABEL = 255
-        self.INPUT_SIZE = '321,321' # TODO: examine the dataset
+        self.INPUT_SIZE = '321,321'
         self.LEARNING_RATE = 2.5e-4
         self.MOMENTUM = 0.9
-        self.NUM_CLASSES = 21
+        self.NUM_CLASSES = 11
         self.NUM_STEPS = 20000
         self.POWER = 0.9
         self.RANDOM_SEED = 1234
@@ -122,14 +122,14 @@ class TrainArgParser():
 class EvalArgParser():
     def __init__(self):
         self.parser = argparse.ArgumentParser(description="VOC evaluation script")
-        self.IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32) # TODO: examine the dataset
+        self.IMG_MEAN = np.array((123.68748388, 118.66391674, 109.94100899), dtype=np.float32)
 
         self.MODEL = 'DeepLab'
-        self.DATA_DIRECTORY = './dataset/ADE20K' # TODO: examine the dataset
-        self.DATA_LIST_PATH = './dataset/ADE_list/train_aug.txt' # TODO: examine the dataset
+        self.DATA_DIRECTORY = '../dataset/ADE20K_2021_17_01'
+        self.DATA_LIST_PATH = '../dataset/data/validation_aug.txt'
         self.IGNORE_LABEL = 255
-        self.NUM_CLASSES = 21  # TODO: examine the dataset
-        self.NUM_STEPS = 1449 #  # TODO: examine the dataset Number of images in the validation set.
+        self.NUM_CLASSES = 11
+        self.NUM_STEPS = 1449
         # RESTORE_FROM = 'http://vllab1.ucmerced.edu/~whung/adv-semi-seg/AdvSemiSegVOC0.125-8d75b3f1.pth'
         self.PRETRAINED_MODEL = None
         self.SAVE_DIRECTORY = 'results'
