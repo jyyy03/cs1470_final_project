@@ -93,7 +93,6 @@ def load_ade20(args):
                     scale=args.random_scale, mirror=args.random_mirror, mean=IMG_MEAN)
 
     train_dataset_size = len(train_dataset)
-    print(train_dataset_size)
 
     train_gt_dataset = VOCGTDataSet(args.data_dir, args.data_list, crop_size=input_size,
                        scale=args.random_scale, mirror=args.random_mirror, mean=IMG_MEAN)
@@ -104,13 +103,12 @@ def load_ade20(args):
         trainloader = trainloader.batch(batch_size=args.batch_size)
     
     else: #sample partial data
-        partial_size = int(args.partial_data * train_dataset_size)
         if args.partial_id is not None:
             train_ids = pickle.load(open(args.partial_id))
             print('loading train ids from {}'.format(args.partial_id))
         else:
-            train_ids = range(train_dataset_size)
-            np.random.shuffle(train_ids)
+            train_ids = list(range(train_dataset_size))
+            np.random.shuffle(train_ids)       
 
         # Calculate the size of partial data
         partial_size = int(args.partial_data * train_dataset_size)
@@ -118,6 +116,7 @@ def load_ade20(args):
         # Split train_ids into partial and remaining parts
         train_ids_partial = train_ids[:partial_size]
         train_ids_remain = train_ids[partial_size:]
+        # TODO: check if the dataset is loaded correctly...
 
         # Create TensorFlow datasets for partial and remaining data
         train_dataset_partial = tf.data.Dataset.from_tensor_slices(train_ids_partial)
