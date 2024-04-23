@@ -1,24 +1,20 @@
 from parser.parser import TrainArgParser
-import pickle
-import os
-import os.path as osp
-import pickle
-
-
 from model.deeplab import Res_Deeplab
 from model.discriminator import FCDiscriminator
+from dataset.preprocess import preprocess
 import timeit
 
-import train_utils
+from utils import train_utils
 
 start = timeit.default_timer()
 
 def train(args):
-    
+    trainloader, trainloader_gt, trainloader_remain = train_utils.load_ade20(args)
+
     model_Deeplab = Res_Deeplab()
     model_Dis = FCDiscriminator
-    train_utils.compile_model(model_Deeplab, model_Dis, args)
-    trainloader, trainloader_gt, trainloader_remain = train_utils.load_ade20(args)
+    # train_utils.compile_model(model_Deeplab, model_Dis, args)
+    
    
     # # loss/ bilinear upsampling
     # bce_loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)
@@ -177,7 +173,7 @@ def train(args):
     #     print(end-start,'seconds')
 
 
-def main(args):
+def main(args):    
     train(args)
 
 if __name__ == '__main__':

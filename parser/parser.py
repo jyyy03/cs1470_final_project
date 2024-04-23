@@ -1,18 +1,17 @@
 import argparse
 import numpy as np
+import os
 
+upper_level_path = os.path.dirname(os.path.dirname(__file__))
 class TrainArgParser():
     def __init__(self):
         self.parser = argparse.ArgumentParser(description="DeepLab-ResNet Network")
-
-        self.IMG_MEAN = np.array((123.68748388, 118.66391674, 109.94100899), dtype=np.float32)
-
         self.MODEL = 'DeepLab'
         self.BATCH_SIZE = 10
         self.ITER_SIZE = 1
         self.NUM_WORKERS = 4
-        self.DATA_DIRECTORY = '../dataset/ADE20K_2021_17_01'
-        self.DATA_LIST_PATH = '../dataset/data/train_aug.txt'
+        self.DATA_DIRECTORY = f'{upper_level_path}/dataset/ADE20K_2021_17_01'
+        self.DATA_LIST_PATH = f'{upper_level_path}/dataset/data/train_aug.txt'
         self.IGNORE_LABEL = 255
         self.INPUT_SIZE = '321,321'
         self.LEARNING_RATE = 2.5e-4
@@ -21,7 +20,7 @@ class TrainArgParser():
         self.NUM_STEPS = 20000
         self.POWER = 0.9
         self.RANDOM_SEED = 1234
-        # self. RESTORE_FROM = 'http://vllab1.ucmerced.edu/~whung/adv-semi-seg/resnet101COCO-41f33a49.pth'
+        self. RESTORE_FROM = 'model/pretrained/Deeplab Resnet.ckpt'
         self.SAVE_NUM_IMAGES = 2
         self.SAVE_PRED_EVERY = 5000
         # self. SNAPSHOT_DIR = './snapshots/'
@@ -125,8 +124,8 @@ class EvalArgParser():
         self.IMG_MEAN = np.array((123.68748388, 118.66391674, 109.94100899), dtype=np.float32)
 
         self.MODEL = 'DeepLab'
-        self.DATA_DIRECTORY = '../dataset/ADE20K_2021_17_01'
-        self.DATA_LIST_PATH = '../dataset/data/validation_aug.txt'
+        self.DATA_DIRECTORY = f'{upper_level_path}/dataset/ADE20K_2021_17_01'
+        self.DATA_LIST_PATH = f'{upper_level_path}/dataset/data/validation_aug.txt'
         self.IGNORE_LABEL = 255
         self.NUM_CLASSES = 11
         self.NUM_STEPS = 1449

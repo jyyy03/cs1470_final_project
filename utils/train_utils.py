@@ -87,14 +87,16 @@ def load_ade20(args):
     """
     h, w = map(int, args.input_size.split(','))
     input_size = (h, w)
+    IMG_MEAN = np.array((123.68748388, 118.66391674, 109.94100899), dtype=np.float32)
 
     train_dataset = VOCDataSet(args.data_dir, args.data_list, crop_size=input_size,
-                    scale=args.random_scale, mirror=args.random_mirror, mean=args.IMG_MEAN)
+                    scale=args.random_scale, mirror=args.random_mirror, mean=IMG_MEAN)
 
     train_dataset_size = len(train_dataset)
+    print(train_dataset_size)
 
     train_gt_dataset = VOCGTDataSet(args.data_dir, args.data_list, crop_size=input_size,
-                       scale=args.random_scale, mirror=args.random_mirror, mean=args.IMG_MEAN)
+                       scale=args.random_scale, mirror=args.random_mirror, mean=IMG_MEAN)
     
     if args.partial_data is None:
         trainloader = tf.data.Dataset.from_tensor_slices(train_dataset)
