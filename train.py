@@ -38,10 +38,24 @@ def train_one_step(model, model_D, interp, trainloader_iter, trainloader_gt_iter
 
 
 def train(args):
-    trainloader = preprocess()
-    for batch in trainloader:
+    train_loader = preprocess()
+    for batch in train_loader:
         print(f'img {batch[0]} \n ======================')
         print(f'label {batch[1]}')
+        deeplab = Res_Deeplab() ## TODO: init
+        model_D = FCDiscriminator() ## TODO: init
+        pred_label = 0
+        loss_D_value = 0
+        pred = deeplab(batch[0])
+        loss_ce = train_utils.loss_function(pred, batch[1])
+        bce_loss = BCEWithLogitsLoss2d()   ## TODO: bce_loss
+        with tf.GradientTape() as tape:
+            D_out = model_D(softmax(pred)) ## TODO: tf.softmax
+            loss_D = bce_loss(D_out, train_utils.make_D_label(pred_label, ignore_mask))
+            loss_D_value += loss_D/args.iter_size/2
+        grads = tape.gradient(loss_D, model_D.trainable_variables)
+        model_D.optimizer.apply_gradients(zip(grads, model_D.trainable_variables))
+        print(loss_ce)
 
     # trainloader, trainloader_gt, trainloader_remain = train_utils.load_ade20(args) # TODO: wait for dataset
 
@@ -213,3 +227,5 @@ def main(args):
 if __name__ == '__main__':
     train_parser = TrainArgParser()
     main(train_parser.get_arguments())
+
+
