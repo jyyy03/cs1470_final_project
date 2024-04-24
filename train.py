@@ -5,25 +5,59 @@ from dataset.preprocess import preprocess
 import timeit
 
 from utils import train_utils
+import tensorflow as tf
+import numpy as np
+from dataset.preprocess import preprocess
 
 start = timeit.default_timer()
+def train_one_step(model, model_D, interp, trainloader_iter, trainloader_gt_iter, trainloader_remain_iter, step, args):
+    """
+    Trains the model with one epoch.
+    """
+    # loss_seg_value = 0
+    # loss_adv_pred_value = 0
+    # loss_D_value = 0
+    # loss_semi_value = 0
+    # loss_semi_adv_value = 0
+    # optimizer_callback = tf.keras.callbacks.LearningRateScheduler(train_utils.adjust_learning_rate)
+    # # 1. train semi
+    # for sub_i in range(args.iter_size):
+    #     if (args.lambda_semi > 0 or args.lambda_semi_adv > 0 ) and step >= args.semi_start_adv:
+    #         _, batch = trainloader_remain_iter.get_next()
+    #         images = batch[0]
+    #         images = tf.convert_to_tensor(images, dtype=tf.float32)
+
+    #         pred = interp(model(images))
+    #         D_out = interp(model_D(tf.nn.softmax(pred)))
+    #         D_out_sigmoid = tf.nn.sigmoid(D_out).numpy().squeeze(axis=1)
+
+    #         ignore_mask_remain = np.zeros(D_out_sigmoid.shape, dtype=np.bool)
+    #         loss_semi_adv = args.lambda_semi_adv * bce_loss(D_out, make_D_label(gt_label, ignore_mask_remain))
+    #         loss_semi_adv /= args.iter_size
+    #         loss_semi_adv_value += loss_semi_adv.numpy() / args.lambda_semi_adva
+
 
 def train(args):
-    trainloader, trainloader_gt, trainloader_remain = train_utils.load_ade20(args)
+    trainloader = preprocess()
+    for batch in trainloader:
+        print(f'img {batch[0]} \n ======================')
+        print(f'label {batch[1]}')
 
-    model_Deeplab = Res_Deeplab()
-    model_Dis = FCDiscriminator
+    # trainloader, trainloader_gt, trainloader_remain = train_utils.load_ade20(args) # TODO: wait for dataset
+
+    # model_Deeplab = Res_Deeplab()
+    # model_Dis = FCDiscriminator()
     # train_utils.compile_model(model_Deeplab, model_Dis, args)
     
    
-    # # loss/ bilinear upsampling
-    # bce_loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+    # # # loss/ bilinear upsampling
+    # # bce_loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 
     # # Upsampling layer
-    # if tf.__version__ >= '2.4.0':
-    #     interp = tf.keras.layers.UpSampling2D(size=(input_size[1], input_size[0]), interpolation='bilinear', align_corners=True)
-    # else:
-    #     interp = tf.keras.layers.UpSampling2D(size=(input_size[1], input_size[0]), interpolation='bilinear')
+    # h, w = map(int, args.input_size.split(','))
+    # input_size = (h, w)
+    # upsampling = tf.keras.layers.UpSampling2D(size=(input_size[1], input_size[0]), interpolation='bilinear')
+        
     
     # # labels for adversarial training
     # pred_label = 0
