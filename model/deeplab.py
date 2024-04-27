@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from tensorflow.keras import layers
+# from tensorflow.keras import layers
 
 def outS(i):
     i = int(i)
@@ -113,7 +113,7 @@ class ResNet(tf.keras.Model):
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=1, dilation=2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=1, dilation=4)
-        self.layer5 = self._make_pred_layer(Classifier_Module, [6,12,18,24],[6,12,18,24], num_classes)
+        self.layer5 = self._make_pred_layer(Classifier_Module, [6,12.0,18.0,24.0],["same"], num_classes)
 
         # TODO Maybe need to add something like:
         # for m in self.modules():

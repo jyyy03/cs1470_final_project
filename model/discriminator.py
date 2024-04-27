@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras import layers
+# from tensorflow.keras import layers
 
 class FCDiscriminator(tf.keras.Model):
     def __init__(self, num_classes, ndf=64):
