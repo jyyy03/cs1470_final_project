@@ -37,6 +37,7 @@ def train_one_step(model, model_D, interp, trainloader_iter, trainloader_gt_iter
     #         loss_semi_adv_value += loss_semi_adv.numpy() / args.lambda_semi_adva
 
 
+
 def train(args):
     train_loader = preprocess()
     for batch in train_loader:
@@ -48,10 +49,10 @@ def train(args):
         loss_D_value = 0
         pred = deeplab(batch[0])
         loss_ce = train_utils.loss_function(pred, batch[1])
-        bce_loss = BCEWithLogitsLoss2d()   ## TODO: bce_loss
+        bce_loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)   ## TODO: bce_loss
         with tf.GradientTape() as tape:
-            D_out = model_D(softmax(pred)) ## TODO: tf.softmax
-            loss_D = bce_loss(D_out, train_utils.make_D_label(pred_label, ignore_mask))
+            D_out = model_D(tf.nn.softmax(pred)) ## TODO: tf.softmax
+            loss_D = bce_loss(D_out, train_utils.make_D_label(pred_label, args.ignore_mask))
             loss_D_value += loss_D/args.iter_size/2
         grads = tape.gradient(loss_D, model_D.trainable_variables)
         model_D.optimizer.apply_gradients(zip(grads, model_D.trainable_variables))
