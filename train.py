@@ -40,11 +40,14 @@ def train_one_step(model, model_D, interp, trainloader_iter, trainloader_gt_iter
 
 def train(args):
     train_loader = preprocess()
+    print("preprocess complete")
+    
+    optimizer = tf.keras.optimizers.SGD()
     for batch in train_loader:
         print(f'img {batch[0]} \n ======================')
         print(f'label {batch[1]}')
-        deeplab = Res_Deeplab() ## TODO: init
-        model_D = FCDiscriminator() ## TODO: init
+        deeplab = Res_Deeplab(11) ## TODO: init
+        model_D = FCDiscriminator(11) ## TODO: init
         pred_label = 0
         loss_D_value = 0
         pred = deeplab(batch[0])
@@ -55,7 +58,7 @@ def train(args):
             loss_D = bce_loss(D_out, train_utils.make_D_label(pred_label, args.ignore_mask))
             loss_D_value += loss_D/args.iter_size/2
         grads = tape.gradient(loss_D, model_D.trainable_variables)
-        model_D.optimizer.apply_gradients(zip(grads, model_D.trainable_variables))
+        optimizer.apply_gradients(zip(grads, model_D.trainable_variables))
         print(loss_ce)
 
     # trainloader, trainloader_gt, trainloader_remain = train_utils.load_ade20(args) # TODO: wait for dataset

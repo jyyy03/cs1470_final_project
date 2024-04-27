@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 
 from utils.loss import CrossEntropy2d
-from dataset.ade20_dataset import VOCDataSet, VOCGTDataSet, VOCDataTestSet
+# from dataset.ade20_dataset import VOCDataSet, VOCGTDataSet, VOCDataTestSet
 
 
 def loss_function(pred, label):
@@ -81,63 +81,63 @@ def compile_model(model_S, model_D, args):
         loss        = loss_function,
     ) 
 
-def load_ade20(args):
-    """
-    Loads ade20 dataset.
-    """
-    h, w = map(int, args.input_size.split(','))
-    input_size = (h, w)
-    IMG_MEAN = np.array((123.68748388, 118.66391674, 109.94100899), dtype=np.float32)
+# def load_ade20(args):
+#     """
+#     Loads ade20 dataset.
+#     """
+#     h, w = map(int, args.input_size.split(','))
+#     input_size = (h, w)
+#     IMG_MEAN = np.array((123.68748388, 118.66391674, 109.94100899), dtype=np.float32)
 
-    train_dataset = VOCDataSet(args.data_dir, args.data_list, crop_size=input_size,
-                    scale=args.random_scale, mirror=args.random_mirror, mean=IMG_MEAN)
+#     train_dataset = VOCDataSet(args.data_dir, args.data_list, crop_size=input_size,
+#                     scale=args.random_scale, mirror=args.random_mirror, mean=IMG_MEAN)
 
-    train_dataset_size = len(train_dataset)
+#     train_dataset_size = len(train_dataset)
 
-    train_gt_dataset = VOCGTDataSet(args.data_dir, args.data_list, crop_size=input_size,
-                       scale=args.random_scale, mirror=args.random_mirror, mean=IMG_MEAN)
+#     train_gt_dataset = VOCGTDataSet(args.data_dir, args.data_list, crop_size=input_size,
+#                        scale=args.random_scale, mirror=args.random_mirror, mean=IMG_MEAN)
     
-    if args.partial_data is None:
-        trainloader = tf.data.Dataset.from_tensor_slices(train_dataset)
-        trainloader = trainloader.shuffle(buffer_size=len(train_dataset))
-        trainloader = trainloader.batch(batch_size=args.batch_size)
+#     if args.partial_data is None:
+#         trainloader = tf.data.Dataset.from_tensor_slices(train_dataset)
+#         trainloader = trainloader.shuffle(buffer_size=len(train_dataset))
+#         trainloader = trainloader.batch(batch_size=args.batch_size)
     
-    else: #sample partial data
-        if args.partial_id is not None:
-            train_ids = pickle.load(open(args.partial_id))
-            print('loading train ids from {}'.format(args.partial_id))
-        else:
-            train_ids = list(range(train_dataset_size))
-            np.random.shuffle(train_ids)       
+#     else: #sample partial data
+#         if args.partial_id is not None:
+#             train_ids = pickle.load(open(args.partial_id))
+#             print('loading train ids from {}'.format(args.partial_id))
+#         else:
+#             train_ids = list(range(train_dataset_size))
+#             np.random.shuffle(train_ids)       
 
-        # Calculate the size of partial data
-        partial_size = int(args.partial_data * train_dataset_size)
+#         # Calculate the size of partial data
+#         partial_size = int(args.partial_data * train_dataset_size)
 
-        # Split train_ids into partial and remaining parts
-        train_ids_partial = train_ids[:partial_size]
-        train_ids_remain = train_ids[partial_size:]
-        # TODO: check if the dataset is loaded correctly...
+#         # Split train_ids into partial and remaining parts
+#         train_ids_partial = train_ids[:partial_size]
+#         train_ids_remain = train_ids[partial_size:]
+#         # TODO: check if the dataset is loaded correctly...
 
-        # Create TensorFlow datasets for partial and remaining data
-        train_dataset_partial = tf.data.Dataset.from_tensor_slices(train_ids_partial)
-        train_dataset_remain = tf.data.Dataset.from_tensor_slices(train_ids_remain)
-        # Create dataset objects for partial, remaining, and ground truth data loaders
-        trainloader = (train_dataset_partial
-                            .shuffle(buffer_size=partial_size)
-                            .batch(batch_size=args.batch_size)
-                            # .prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
-                            )
+#         # Create TensorFlow datasets for partial and remaining data
+#         train_dataset_partial = tf.data.Dataset.from_tensor_slices(train_ids_partial)
+#         train_dataset_remain = tf.data.Dataset.from_tensor_slices(train_ids_remain)
+#         # Create dataset objects for partial, remaining, and ground truth data loaders
+#         trainloader = (train_dataset_partial
+#                             .shuffle(buffer_size=partial_size)
+#                             .batch(batch_size=args.batch_size)
+#                             # .prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+#                             )
 
-        trainloader_remain = (train_dataset_remain
-                            .shuffle(buffer_size=len(train_ids_remain))
-                            .batch(batch_size=args.batch_size)
-                            # .prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
-                            )
+#         trainloader_remain = (train_dataset_remain
+#                             .shuffle(buffer_size=len(train_ids_remain))
+#                             .batch(batch_size=args.batch_size)
+#                             # .prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+#                             )
 
-        trainloader_gt = (train_gt_dataset
-                        .shuffle(buffer_size=len(train_ids_partial))
-                        .batch(batch_size=args.batch_size)
-                        # .prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
-                        )
-    return trainloader, trainloader_gt, trainloader_remain
+#         trainloader_gt = (train_gt_dataset
+#                         .shuffle(buffer_size=len(train_ids_partial))
+#                         .batch(batch_size=args.batch_size)
+#                         # .prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+#                         )
+#     return trainloader, trainloader_gt, trainloader_remain
     
