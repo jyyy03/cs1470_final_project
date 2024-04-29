@@ -1,12 +1,12 @@
 from parser.parser import TrainArgParser
-from model.deeplab import Res_Deeplab
+# from model.deeplab import Res_Deeplab
+from model.new_deeplab import myDeeplab
 from model.discriminator import FCDiscriminator
 from dataset.preprocess import preprocess
 import timeit
 
-from utils import train_utils
+from utils import train_utils, reload_pretrained
 import tensorflow as tf
-import numpy as np
 from dataset.preprocess import preprocess
 
 start = timeit.default_timer()
@@ -44,17 +44,21 @@ def train(args):
     
     optimizer = tf.keras.optimizers.SGD()
     for batch in train_loader:
-        print(f'img {batch[0]} \n ======================')
-        print(f'label {batch[1]}')
-        deeplab = Res_Deeplab(11) ## TODO: init
-        model_D = FCDiscriminator(11) ## TODO: init
+        print(f'img {batch[0].shape} \n ======================')
+        print(f'label {batch[1].shape}')
+        # deeplab = Res_Deeplab(11)
+        deeplab = myDeeplab(((batch[0].shape[1], batch[0].shape[2], batch[0].shape[3])))
+        reload_pretrained.restore_model_from_checkpoint('model/pretrained/Deeplab Resnet.ckpt', deeplab)
+        model_D = FCDiscriminator(11) 
         pred_label = 0
         loss_D_value = 0
-        pred = deeplab(batch[0])
+        print('====== start feeding deeplab ===== ')
+        pred = deeplab.predict_on_batch(batch[0])
+        print('====== done!!!!!!!!! ===== ')
         loss_ce = train_utils.loss_function(pred, batch[1])
-        bce_loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)   ## TODO: bce_loss
+        bce_loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)
         with tf.GradientTape() as tape:
-            D_out = model_D(tf.nn.softmax(pred)) ## TODO: tf.softmax
+            D_out = model_D(tf.nn.softmax(pred))
             loss_D = bce_loss(D_out, train_utils.make_D_label(pred_label, args.ignore_mask))
             loss_D_value += loss_D/args.iter_size/2
         grads = tape.gradient(loss_D, model_D.trainable_variables)
