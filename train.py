@@ -39,15 +39,16 @@ def train_one_step(model, model_D, interp, trainloader_iter, trainloader_gt_iter
 
 
 def train(args):
-    train_loader = preprocess()
+    train_dataset, val_dataset = preprocess()
     print("preprocess complete")
     
+    
     optimizer = tf.keras.optimizers.SGD()
-    for batch in train_loader:
+    for batch in train_dataset:
         print(f'img {batch[0].shape} \n ======================')
         print(f'label {batch[1].shape}')
         # deeplab = Res_Deeplab(11)
-        deeplab = myDeeplab(((batch[0].shape[1], batch[0].shape[2], batch[0].shape[3])))
+        deeplab = myDeeplab(((batch[0].shape[0], batch[0].shape[1], batch[0].shape[2])))
         reload_pretrained.restore_model_from_checkpoint('model/pretrained/Deeplab Resnet.ckpt', deeplab)
         model_D = FCDiscriminator(11) 
         pred_label = 0
