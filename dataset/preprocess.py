@@ -49,7 +49,7 @@ def preprocess_helper(image_path, mask_path, target_size=(321, 321)):
 
 def preprocess():
     # Path to data directory
-    data_dir = 'Forest/Forest Segmented/Forest Segmented'
+    data_dir = 'dataset/Forest/Forest Segmented/Forest Segmented'
 
     # Load metadata CSV
     metadata_df = pd.read_csv(os.path.join(data_dir, 'meta_data.csv'))
@@ -68,15 +68,18 @@ def preprocess():
     ))
 
     # Preprocess data
-    target_size = (321, 321)
+    target_size = (256, 256)
     train_dataset = train_dataset.map(lambda x, y: preprocess_helper(x, y, target_size))
     val_dataset = val_dataset.map(lambda x, y: preprocess_helper(x, y, target_size))
+
+    batch_size = 10
+    train_dataset = train_dataset.batch(batch_size).prefetch(tf.data.AUTOTUNE)
+    val_dataset = val_dataset.batch(batch_size).prefetch(tf.data.AUTOTUNE)
 
     # Now train_dataset and val_dataset contain preprocessed data ready for training your segmentation model
     # print(train_dataset)
     # print(val_dataset)
     return train_dataset, val_dataset
-
 
 def visualize_dataset(dataset, num_samples=5):
     plt.figure(figsize=(15, num_samples * 5))
@@ -100,10 +103,10 @@ def visualize_dataset(dataset, num_samples=5):
 
 train_dataset, val_dataset = preprocess()
 # Visualize samples from the training dataset
-visualize_dataset(train_dataset)
+# visualize_dataset(train_dataset)
 
 # Visualize samples from the validation dataset
-visualize_dataset(val_dataset)
+# visualize_dataset(val_dataset)
 
 
 
