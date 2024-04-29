@@ -113,7 +113,7 @@ class ResNet(tf.keras.Model):
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=1, dilation=2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=1, dilation=4)
-        self.layer5 = self._make_pred_layer(Classifier_Module, [6,12.0,18.0,24.0],["same"], num_classes)
+        self.layer5 = self._make_pred_layer(Classifier_Module, [6,12,18,24],["same"], num_classes)
 
         # TODO Maybe need to add something like:
         # for m in self.modules():
@@ -181,6 +181,6 @@ class ResNet(tf.keras.Model):
             {'params': self.get_10x_lr_params(model), 'lr': 10 * learning_rate}]
 
 
-def Res_Deeplab(num_classes=21):
+def Res_Deeplab(num_classes=11):
     model = ResNet(Bottleneck,[3, 4, 23, 3], num_classes)
     return model
