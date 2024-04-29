@@ -30,7 +30,7 @@ import pandas as pd
 
 
 # Function to preprocess image and generate two masks
-def preprocess_data(image_path, mask_path, target_size=(321, 321)):
+def preprocess_helper(image_path, mask_path, target_size=(321, 321)):
     # Read image
     image = tf.io.read_file(image_path)
     image = tf.image.decode_jpeg(image, channels=3)
@@ -52,39 +52,40 @@ def preprocess_data(image_path, mask_path, target_size=(321, 321)):
     
     return image, stacked_masks
 
-# Path to data directory
-data_dir = 'Forest/Forest Segmented/Forest Segmented'
+def preprocess():
+    # Path to data directory
+    data_dir = 'Forest/Forest Segmented/Forest Segmented'
 
-# Load metadata CSV
-metadata_df = pd.read_csv(os.path.join(data_dir, 'meta_data.csv'))
+    # Load metadata CSV
+    metadata_df = pd.read_csv(os.path.join(data_dir, 'meta_data.csv'))
 
-# Split data into training and validation sets
-train_metadata, val_metadata = train_test_split(metadata_df, test_size=0.2, random_state=42)
+    # Split data into training and validation sets
+    train_metadata, val_metadata = train_test_split(metadata_df, test_size=0.2, random_state=42)
 
-# Create TensorFlow dataset for training and validation data
-train_dataset = tf.data.Dataset.from_tensor_slices((
-    [os.path.join(data_dir, 'images', image_name) for image_name in train_metadata['image']],
-    [os.path.join(data_dir, 'masks', mask_name) for mask_name in train_metadata['mask']]
-))
-val_dataset = tf.data.Dataset.from_tensor_slices((
-    [os.path.join(data_dir, 'images', image_name) for image_name in val_metadata['image']],
-    [os.path.join(data_dir, 'masks', mask_name) for mask_name in val_metadata['mask']]
-))
+    # Create TensorFlow dataset for training and validation data
+    train_dataset = tf.data.Dataset.from_tensor_slices((
+        [os.path.join(data_dir, 'images', image_name) for image_name in train_metadata['image']],
+        [os.path.join(data_dir, 'masks', mask_name) for mask_name in train_metadata['mask']]
+    ))
+    val_dataset = tf.data.Dataset.from_tensor_slices((
+        [os.path.join(data_dir, 'images', image_name) for image_name in val_metadata['image']],
+        [os.path.join(data_dir, 'masks', mask_name) for mask_name in val_metadata['mask']]
+    ))
 
-# Preprocess data
-target_size = (321, 321)
-train_dataset = train_dataset.map(lambda x, y: preprocess_data(x, y, target_size))
-val_dataset = val_dataset.map(lambda x, y: preprocess_data(x, y, target_size))
+    # Preprocess data
+    target_size = (321, 321)
+    train_dataset = train_dataset.map(lambda x, y: preprocess_helper(x, y, target_size))
+    val_dataset = val_dataset.map(lambda x, y: preprocess_helper(x, y, target_size))
 
-# Now train_dataset and val_dataset contain preprocessed data ready for training your segmentation model
-print(train_dataset)
-print(val_dataset)
+    # Now train_dataset and val_dataset contain preprocessed data ready for training your segmentation model
+    # print(train_dataset)
+    # print(val_dataset)
+    return train_dataset, val_dataset
+
 
 def visualize_dataset(dataset, num_samples=5):
     plt.figure(figsize=(15, num_samples * 5))
     for i, (image, mask) in enumerate(dataset.take(num_samples)):
-        # Extract a single image from the batch
-        print("image shape: ", image.shape)
         
         plt.subplot(num_samples, 3, 3*i + 1)
         plt.imshow(image)
@@ -102,6 +103,7 @@ def visualize_dataset(dataset, num_samples=5):
         plt.axis('off')
     plt.show()
 
+train_dataset, val_dataset = preprocess()
 # Visualize samples from the training dataset
 visualize_dataset(train_dataset)
 
