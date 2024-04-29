@@ -2,6 +2,24 @@ import os
 import shutil
 import tensorflow as tf
 
+
+# 100 x height x width x 2
+
+# batch[0] is image: batchsize x height x width x 3
+# -> generated: batchsize x height x width x 2 (Nora)
+
+# batch[1] is masks: 10 x height x width x 2
+
+
+# 5108 Unique Values
+# 4108 Training
+# 1000 Validation
+
+def segment():
+    
+
+
+
 def copy_jpeg_png_files(source_directory, jpegdest, pngdest):
     print(f"======= Start preprocessing data for {source_directory.split('/')[-1]}... ========")
     if not os.path.exists(jpegdest):
@@ -85,7 +103,7 @@ def preprocess(is_training = True):
     dataset = tf.data.Dataset.from_tensor_slices((image_paths, label_paths))
     dataset = dataset.map(load_image_label)
 
-    batch_size = 1024
+    batch_size = 10
     dataset = dataset.batch(batch_size).prefetch(tf.data.AUTOTUNE)
     return dataset
 

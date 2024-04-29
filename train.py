@@ -60,6 +60,7 @@ def train(args):
         grads = tape.gradient(loss_D, model_D.trainable_variables)
         optimizer.apply_gradients(zip(grads, model_D.trainable_variables))
         print(loss_ce)
+        break
 
     # trainloader, trainloader_gt, trainloader_remain = train_utils.load_ade20(args) # TODO: wait for dataset
 
