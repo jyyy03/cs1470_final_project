@@ -49,7 +49,7 @@ def train(args):
         print(f'label {batch[1].shape}')
         # deeplab = Res_Deeplab(11)
         deeplab = myDeeplab(((batch[0].shape[0], batch[0].shape[1], batch[0].shape[2])))
-        reload_pretrained.restore_model_from_checkpoint('model/pretrained/Deeplab Resnet.ckpt', deeplab)
+        reload_pretrained.restore_model_from_checkpoint('model/pretrained/deeplab_resnet.ckpt', deeplab)
         model_D = FCDiscriminator(11) 
         pred_label = 0
         loss_D_value = 0
