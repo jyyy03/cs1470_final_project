@@ -15,11 +15,6 @@ import matplotlib.pyplot as plt
 # batch[1] is masks: 10 x height x width x 2
 
 
-# 5108 Unique Values
-# 4108 Training
-# 1000 Validation
-
-
 
 import os
 import numpy as np
