@@ -42,30 +42,30 @@ def train(args):
     train_dataset, val_dataset = preprocess()
     print("preprocess complete")
     
-    
-    optimizer = tf.keras.optimizers.SGD()
+    optimizer = tf.keras.optimizers.legacy.SGD()
+    deeplab = myDeeplab(((256, 256, 3)))
+    reload_pretrained.restore_model_from_checkpoint('model/pretrained/deeplab_resnet.ckpt', deeplab)
+    print('====== Start feeding deeplab ===== ')
     for batch in train_dataset:
-        print(f'img {batch[0].shape} \n ======================')
-        print(f'label {batch[1].shape}')
-        # deeplab = Res_Deeplab(11)
-        deeplab = myDeeplab(((batch[0].shape[0], batch[0].shape[1], batch[0].shape[2])))
-        reload_pretrained.restore_model_from_checkpoint('model/pretrained/deeplab_resnet.ckpt', deeplab)
-        model_D = FCDiscriminator(11) 
-        pred_label = 0
-        loss_D_value = 0
-        print('====== start feeding deeplab ===== ')
-        pred = deeplab.predict_on_batch(batch[0])
-        print('====== done!!!!!!!!! ===== ')
-        loss_ce = train_utils.loss_function(pred, batch[1])
-        bce_loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+        images, labels = batch
+        
         with tf.GradientTape() as tape:
-            D_out = model_D(tf.nn.softmax(pred))
-            loss_D = bce_loss(D_out, train_utils.make_D_label(pred_label, args.ignore_mask))
-            loss_D_value += loss_D/args.iter_size/2
-        grads = tape.gradient(loss_D, model_D.trainable_variables)
-        optimizer.apply_gradients(zip(grads, model_D.trainable_variables))
-        print(loss_ce)
-        break
+            batch_confidence_map = deeplab(images, training=True)
+            loss_ce = tf.keras.losses.CategoricalCrossentropy()(batch_confidence_map, labels)
+            print(f'====== Loss is {loss_ce.numpy()} ===== ')
+        
+        gradients = tape.gradient(loss_ce, deeplab.trainable_variables)
+        optimizer.apply_gradients(zip(gradients, deeplab.trainable_variables))
+    print('====== Deeplab Complete===== ')
+
+        # with tf.GradientTape() as tape:
+        #     D_out = model_D(tf.nn.softmax(pred))
+        #     loss_D = bce_loss(D_out, train_utils.make_D_label(pred_label, args.ignore_mask))
+        #     loss_D_value += loss_D/args.iter_size/2
+        # grads = tape.gradient(loss_D, model_D.trainable_variables)
+        # optimizer.apply_gradients(zip(grads, model_D.trainable_variables))
+        # print(loss_ce)
+        # break
 
     # trainloader, trainloader_gt, trainloader_remain = train_utils.load_ade20(args) # TODO: wait for dataset
 

@@ -162,3 +162,4 @@ cython_debug/
 .DS_Store
 model/pretrained
 dataset/ADE20K_2021_17_01
+dataset/Forest
