@@ -49,20 +49,21 @@ def train(args):
     optimizer = tf.keras.optimizers.legacy.Adam()
     deeplab = myDeeplab(((256, 256, 3)))
     reload_pretrained.restore_model_from_checkpoint('model/pretrained/deeplab_resnet.ckpt', deeplab)
+    deeplab.trainables = True
     print('====== Start feeding deeplab ===== ')
     for batch in train_dataset:
         images, labels = batch
-        print("image", images[0])
-        print("ground truth 1: ", labels[0, :, :, 0])
-        print("ground truth 2: ", labels[0, :, :, 1])
+        # print("image", images[0])
+        # print("ground truth 1: ", labels[0, :, :, 0])
+        # print("ground truth 2: ", labels[0, :, :, 1])
         last_images = images
         last_labels = labels
         
         with tf.GradientTape() as tape:
             batch_confidence_map = deeplab(images, training=True)
             final_confidence_map = batch_confidence_map
-            print("pred 1: ", batch_confidence_map[0, :, :, 0])
-            print("pred 2: ", batch_confidence_map[0, :, :, 1])
+            # print("pred 1: ", batch_confidence_map[0, :, :, 0])
+            # print("pred 2: ", batch_confidence_map[0, :, :, 1])
             loss_ce = tf.keras.losses.BinaryCrossentropy()(batch_confidence_map, labels)
             print(f'====== Loss is {loss_ce.numpy()} ===== ')
         
