@@ -3,7 +3,6 @@ import tensorflow as tf
 def restore_model_from_checkpoint(checkpoint_path, model):
     reader = tf.train.load_checkpoint(checkpoint_path)
     restore_dict = reader.get_variable_to_shape_map()
-
     for var in model.variables:
        if var.path in restore_dict:
             tensor = reader.get_tensor(var.path)

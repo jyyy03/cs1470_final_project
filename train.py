@@ -39,31 +39,30 @@ def train_one_step(model, model_D, interp, trainloader_iter, trainloader_gt_iter
 
 
 def train(args):
-    train_loader = preprocess()
+    train_loader, val_loader = preprocess()
     print("preprocess complete")
     
     optimizer = tf.keras.optimizers.SGD()
     for batch in train_loader:
-        print(f'img {batch[0].shape} \n ======================')
-        print(f'label {batch[1].shape}')
-        # deeplab = Res_Deeplab(11)
         deeplab = myDeeplab(((batch[0].shape[1], batch[0].shape[2], batch[0].shape[3])))
         reload_pretrained.restore_model_from_checkpoint('model/pretrained/Deeplab Resnet.ckpt', deeplab)
         model_D = FCDiscriminator(11) 
         pred_label = 0
         loss_D_value = 0
         print('====== start feeding deeplab ===== ')
-        pred = deeplab.predict_on_batch(batch[0])
-        print('====== done!!!!!!!!! ===== ')
-        loss_ce = train_utils.loss_function(pred, batch[1])
-        bce_loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)
-        with tf.GradientTape() as tape:
-            D_out = model_D(tf.nn.softmax(pred))
-            loss_D = bce_loss(D_out, train_utils.make_D_label(pred_label, args.ignore_mask))
-            loss_D_value += loss_D/args.iter_size/2
-        grads = tape.gradient(loss_D, model_D.trainable_variables)
-        optimizer.apply_gradients(zip(grads, model_D.trainable_variables))
-        print(loss_ce)
+        batch_confidence_map = deeplab.predict_on_batch(batch[0])
+        loss_ce = tf.keras.losses.BinaryCrossentropy()(batch_confidence_map, batch[1])
+        # print(batch_confidence_map[2][128])
+        print(f'====== done. loss is {loss_ce.numpy()} =====')
+
+        # bce_loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+        # with tf.GradientTape() as tape:
+        #     D_out = model_D(tf.nn.softmax(pred))
+        #     loss_D = bce_loss(D_out, train_utils.make_D_label(pred_label, True))
+        #     loss_D_value += loss_D/args.iter_size/2
+        # grads = tape.gradient(loss_D, model_D.trainable_variables)
+        # optimizer.apply_gradients(zip(grads, model_D.trainable_variables))
+        
         break
 
     # trainloader, trainloader_gt, trainloader_remain = train_utils.load_ade20(args) # TODO: wait for dataset
