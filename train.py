@@ -1,16 +1,17 @@
 import numpy as np
 from parser.parser import TrainArgParser
-# from model.deeplab import Res_Deeplab
 from model.new_deeplab import myDeeplab
 from model.discriminator import FCDiscriminator
 from dataset.preprocess import preprocess
 import timeit
+import warnings
 
 from utils import train_utils, reload_pretrained
 import tensorflow as tf
 from dataset.preprocess import preprocess
 from matplotlib import pyplot as plt
 
+warnings.filterwarnings("ignore")
 start = timeit.default_timer()
 def train_one_step(model, model_D, interp, trainloader_iter, trainloader_gt_iter, trainloader_remain_iter, step, args):
     """
@@ -43,10 +44,9 @@ def train(args):
     last_images = None
     last_labels = None
     train_dataset, val_dataset = preprocess()
-    print("===== preprocess complete ======")
-    
-    optimizer_G = tf.keras.optimizers.legacy.Adam(learning_rate=0.00125)
-    optimizer_D = tf.keras.optimizers.legacy.Adam(learning_rate=0.001)
+
+    optimizer_G = tf.keras.optimizers.Adam(learning_rate=0.00125)
+    optimizer_D = tf.keras.optimizers.SGD(learning_rate=0.001)
     
     deeplab = myDeeplab(((256, 256, 3)))
     reload_pretrained.restore_model_from_checkpoint('model/pretrained/deeplab_resnet.ckpt', deeplab)
@@ -54,7 +54,7 @@ def train(args):
     
     discriminator = FCDiscriminator(num_classes=2)
     
-    print('====== Start feeding deeplab ===== ')
+    epoch = 1
     for batch in train_dataset:
         images, labels = batch
         last_images = images
@@ -76,9 +76,6 @@ def train(args):
             # Combine adversarial loss and Cross-Entropy loss for generator
             # TODO Change this 0.1 to lamda g_adv
             loss_G = loss_ce + 0.1 * loss_G_adv
-            print(f"=== Generator Loss is {loss_G.numpy()} ===")
-            print(f"=== Baseline Accuracy is {tf.keras.metrics.MeanIoU(num_classes = 2)(labels, np.where(batch_confidence_map > 0.5, 0, 1))} ===")
-            
         
         # Calculate gradients for generator
         gradients_G = tape_G.gradient(loss_G, deeplab.trainable_variables)
@@ -88,28 +85,31 @@ def train(args):
         
         with tf.GradientTape() as tape_D:
             # Forward pass through discriminator
-            D_fake = discriminator(batch_confidence_map)
-            D_real = discriminator(labels)
+            D_fake = discriminator(batch_confidence_map, training = True)
+            D_real = discriminator(labels, training = True)
             
             # Calculate adversarial loss for discriminator
             loss_D_fake = tf.keras.losses.BinaryCrossentropy()(tf.zeros_like(D_fake), D_fake)
             loss_D_real = tf.keras.losses.BinaryCrossentropy()(tf.ones_like(D_real), D_real)
             loss_D = (loss_D_fake + loss_D_real) / 2.0
-            print(f"=== Discriminator Loss is {loss_D.numpy()} ===")
-            print(f"=== Discriminator Accuracy is {tf.keras.metrics.MeanIoU(num_classes = 2)(D_real, D_fake)} ===")
         
         # Calculate gradients for discriminator
         gradients_D = tape_D.gradient(loss_D, discriminator.trainable_variables)
         
         # Update discriminator
         optimizer_D.apply_gradients(zip(gradients_D, discriminator.trainable_variables))
+        D_real_class = np.where(D_real <= 0.5, 0, 1)
+        D_fake_class = np.where(D_fake <= 0.5, 0, 1)
+        
+        iou_G = tf.keras.metrics.MeanIoU(num_classes = 2)(labels, np.where(batch_confidence_map <= 0.5, 0, 1))
+        iou_D = tf.keras.metrics.MeanIoU(num_classes = 2)(D_real_class, D_fake_class)
+        print(f"epoch: {epoch} loss_G: {loss_G.numpy():.6f}; iou_G: {iou_G.numpy()*100:.6f}; loss_D: {loss_D.numpy():.6f}; iou_D: {iou_D.numpy()*100:.6f}")
+        epoch += 1
     
     np.save('last_images.npy', last_images)
     np.save('last_labels.npy', last_labels)
     np.save('final_confidence_map.npy', final_confidence_map)
     visualize_saved_results()
-        
-    print('====== Deeplab Complete===== ')
 
 
 # def train(args):
@@ -158,15 +158,16 @@ This can be called in main after after training to visualize saved results from 
 '''
 def visualize_saved_results():
     # Change this number to view a different set of 5 images, labels, and confidence maps
-    sample_num = 6
+    sample_num = 4
     last_images = np.load('last_images.npy')
     print(last_images.shape)
     last_labels = np.load('last_labels.npy')
     print(last_labels.shape)
     final_confidence_map = np.load('final_confidence_map.npy')
     print(final_confidence_map.shape)
-    # visualize_helper(last_images[5*sample_num:5+5*sample_num], last_labels[5*sample_num:5+5*sample_num], final_confidence_map[5*sample_num:5+5*sample_num])
-    visualize_helper(last_images[27:32], last_labels[27:32], final_confidence_map[27:32])
+    final_confidence_map_threshold = np.where(final_confidence_map > 0.5, 0,1)
+    # visualize_helper(last_images[5*sample_num:5+5*sample_num], last_labels[5*sample_num:5+5*sample_num], final_confidence_map_threshold[5*sample_num:5+5*sample_num])
+    visualize_helper(last_images[:sample_num], last_labels[:sample_num], final_confidence_map_threshold[:sample_num])
 
 '''
 Generates a plot with images, ground truth segmentations, and confidence maps for 5 samples
@@ -207,7 +208,7 @@ def visualize_helper(images, labels, confidence_maps):
     plt.show()
 
 def main(args):    
-    # train(args)
+    train(args)
     visualize_saved_results()
 
 if __name__ == '__main__':
