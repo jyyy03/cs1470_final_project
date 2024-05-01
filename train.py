@@ -1,3 +1,4 @@
+import numpy as np
 from parser.parser import TrainArgParser
 # from model.deeplab import Res_Deeplab
 from model.new_deeplab import myDeeplab
@@ -8,6 +9,7 @@ import timeit
 from utils import train_utils, reload_pretrained
 import tensorflow as tf
 from dataset.preprocess import preprocess
+from matplotlib import pyplot as plt
 
 start = timeit.default_timer()
 def train_one_step(model, model_D, interp, trainloader_iter, trainloader_gt_iter, trainloader_remain_iter, step, args):
@@ -39,32 +41,102 @@ def train_one_step(model, model_D, interp, trainloader_iter, trainloader_gt_iter
 
 
 def train(args):
-    train_loader = preprocess()
-    print("preprocess complete")
+    final_confidence_map = None
+    last_images = None
+    last_labels = None
+    train_dataset, val_dataset = preprocess()
+    print("===== preprocess complete ======")
     
-    optimizer = tf.keras.optimizers.SGD()
-    for batch in train_loader:
-        print(f'img {batch[0].shape} \n ======================')
-        print(f'label {batch[1].shape}')
-        # deeplab = Res_Deeplab(11)
-        deeplab = myDeeplab(((batch[0].shape[1], batch[0].shape[2], batch[0].shape[3])))
-        reload_pretrained.restore_model_from_checkpoint('model/pretrained/Deeplab Resnet.ckpt', deeplab)
-        model_D = FCDiscriminator(11) 
-        pred_label = 0
-        loss_D_value = 0
-        print('====== start feeding deeplab ===== ')
-        pred = deeplab.predict_on_batch(batch[0])
-        print('====== done!!!!!!!!! ===== ')
-        loss_ce = train_utils.loss_function(pred, batch[1])
-        bce_loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+    optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=0.00125)
+    deeplab = myDeeplab(((256, 256, 3)))
+    reload_pretrained.restore_model_from_checkpoint('model/pretrained/deeplab_resnet.ckpt', deeplab)
+    deeplab.trainables = True
+    print('====== Start feeding deeplab ===== ')
+    for batch in train_dataset:
+        images, labels = batch
+        # print("image", images[0])
+        # print("ground truth 1: ", labels[0, :, :, 0])
+        # print("ground truth 2: ", labels[0, :, :, 1])
+        last_images = images
+        last_labels = labels
+        
         with tf.GradientTape() as tape:
-            D_out = model_D(tf.nn.softmax(pred))
-            loss_D = bce_loss(D_out, train_utils.make_D_label(pred_label, args.ignore_mask))
-            loss_D_value += loss_D/args.iter_size/2
-        grads = tape.gradient(loss_D, model_D.trainable_variables)
-        optimizer.apply_gradients(zip(grads, model_D.trainable_variables))
-        print(loss_ce)
-        break
+            batch_confidence_map = deeplab(images, training=True)
+            final_confidence_map = batch_confidence_map
+            # print("pred 1: ", batch_confidence_map[0, :, :, 0])
+            # print("pred 2: ", batch_confidence_map[0, :, :, 1])
+            loss_ce = tf.keras.losses.BinaryCrossentropy()(batch_confidence_map, labels)
+            print(f'====== Loss is {loss_ce.numpy()} ===== ')
+        
+        gradients = tape.gradient(loss_ce, deeplab.trainable_variables)
+        optimizer.apply_gradients(zip(gradients, deeplab.trainable_variables))
+        
+    print('====== Deeplab Complete===== ')
+
+    # Save the final results from training
+    np.save('last_images.npy', last_images)
+    np.save('last_labels.npy', last_labels)
+    np.save('final_confidence_map.npy', final_confidence_map)
+
+    # visualize with final_confidence_map here
+    visualize_saved_results()
+
+'''
+This can be called in main after after training to visualize saved results from the final batch
+'''
+def visualize_saved_results():
+    # Change this number to view a different set of 5 images, labels, and confidence maps
+    sample_num = 7
+    last_images = np.load('last_images.npy')
+    last_labels = np.load('last_labels.npy')
+    final_confidence_map = np.load('final_confidence_map.npy')
+    visualize_helper(last_images[5*sample_num:5+5*sample_num], last_labels[5*sample_num:5+5*sample_num], final_confidence_map[5*sample_num:5+5*sample_num])
+
+'''
+Generates a plot with images, ground truth segmentations, and confidence maps for 5 samples
+'''
+def visualize_helper(images, labels, confidence_maps):
+    num_samples = 5
+    plt.figure(figsize=(15, num_samples * 5))
+    for i in range(num_samples):
+        plt.subplot(num_samples, 5, 5*i + 1)
+        plt.imshow(images[i])
+        plt.title('Image')
+        plt.axis('off')
+
+        plt.subplot(num_samples, 5, 5*i + 2)
+        plt.imshow(labels[i, :, :, 0], cmap='plasma')
+        plt.title('Ground Truth 1')
+        plt.axis('off')
+
+        plt.subplot(num_samples, 5, 5*i + 3)
+        plt.imshow(labels[i, :, :, 1], cmap='plasma')
+        plt.title('Ground Truth 2')
+        plt.axis('off')
+
+        plt.subplot(num_samples, 5, 5*i + 4)
+        plt.imshow(confidence_maps[i, :, :, 0], cmap='plasma')
+        print("pred 1: ", confidence_maps[i, :, :, 0])
+        plt.title('Class 1 Confidence Map')
+        plt.colorbar()
+        plt.axis('off')
+
+        plt.subplot(num_samples, 5, 5*i + 5)
+        plt.imshow(confidence_maps[i, :, :, 1], cmap='plasma')
+        print("pred 2: ", confidence_maps[i, :, :, 1])
+        plt.title('Class 2 Confidence Map')
+        plt.colorbar()
+        plt.axis('off')
+    plt.show()
+
+def main(args):    
+    # train(args)
+    visualize_saved_results()
+
+if __name__ == '__main__':
+    train_parser = TrainArgParser()
+    main(train_parser.get_arguments())
+
 
     # trainloader, trainloader_gt, trainloader_remain = train_utils.load_ade20(args) # TODO: wait for dataset
 
@@ -230,11 +302,6 @@ def train(args):
     #     print(end-start,'seconds')
 
 
-def main(args):    
-    train(args)
 
-if __name__ == '__main__':
-    train_parser = TrainArgParser()
-    main(train_parser.get_arguments())
 
 
