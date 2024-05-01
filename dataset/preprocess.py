@@ -73,6 +73,7 @@ def preprocess():
     val_dataset = val_dataset.map(lambda x, y: preprocess_helper(x, y, target_size))
 
     batch_size = 20
+
     train_dataset = train_dataset.batch(batch_size).prefetch(tf.data.AUTOTUNE)
     val_dataset = val_dataset.batch(batch_size).prefetch(tf.data.AUTOTUNE)
 
