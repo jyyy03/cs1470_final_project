@@ -1,3 +1,4 @@
+import numpy as np
 from parser.parser import TrainArgParser
 # from model.deeplab import Res_Deeplab
 from model.new_deeplab import myDeeplab
@@ -44,9 +45,9 @@ def train(args):
     last_images = None
     last_labels = None
     train_dataset, val_dataset = preprocess()
-    print("preprocess complete")
+    print("===== preprocess complete ======")
     
-    optimizer = tf.keras.optimizers.legacy.Adam()
+    optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=0.00125)
     deeplab = myDeeplab(((256, 256, 3)))
     reload_pretrained.restore_model_from_checkpoint('model/pretrained/deeplab_resnet.ckpt', deeplab)
     deeplab.trainables = True
@@ -71,12 +72,31 @@ def train(args):
         optimizer.apply_gradients(zip(gradients, deeplab.trainable_variables))
         
     print('====== Deeplab Complete===== ')
-    # visualize with final_confidence_map here
-    # size will be (100, 256, 256, 2), so we can take just maybe the first 5 from the batch
-    visualize_results(last_images[:5], last_labels[:5], final_confidence_map[:5])
 
-def visualize_results(images, labels, confidence_maps):
-    num_samples = images.shape[0]
+    # Save the final results from training
+    np.save('last_images.npy', last_images)
+    np.save('last_labels.npy', last_labels)
+    np.save('final_confidence_map.npy', final_confidence_map)
+
+    # visualize with final_confidence_map here
+    visualize_saved_results()
+
+'''
+This can be called in main after after training to visualize saved results from the final batch
+'''
+def visualize_saved_results():
+    # Change this number to view a different set of 5 images, labels, and confidence maps
+    sample_num = 7
+    last_images = np.load('last_images.npy')
+    last_labels = np.load('last_labels.npy')
+    final_confidence_map = np.load('final_confidence_map.npy')
+    visualize_helper(last_images[5*sample_num:5+5*sample_num], last_labels[5*sample_num:5+5*sample_num], final_confidence_map[5*sample_num:5+5*sample_num])
+
+'''
+Generates a plot with images, ground truth segmentations, and confidence maps for 5 samples
+'''
+def visualize_helper(images, labels, confidence_maps):
+    num_samples = 5
     plt.figure(figsize=(15, num_samples * 5))
     for i in range(num_samples):
         plt.subplot(num_samples, 5, 5*i + 1)
@@ -86,12 +106,12 @@ def visualize_results(images, labels, confidence_maps):
 
         plt.subplot(num_samples, 5, 5*i + 2)
         plt.imshow(labels[i, :, :, 0], cmap='plasma')
-        plt.title('Ground Truth confidence map 1')
+        plt.title('Ground Truth 1')
         plt.axis('off')
 
         plt.subplot(num_samples, 5, 5*i + 3)
         plt.imshow(labels[i, :, :, 1], cmap='plasma')
-        plt.title('Ground Truth confidence 2')
+        plt.title('Ground Truth 2')
         plt.axis('off')
 
         plt.subplot(num_samples, 5, 5*i + 4)
@@ -109,15 +129,13 @@ def visualize_results(images, labels, confidence_maps):
         plt.axis('off')
     plt.show()
 
+def main(args):    
+    # train(args)
+    visualize_saved_results()
 
-        # with tf.GradientTape() as tape:
-        #     D_out = model_D(tf.nn.softmax(pred))
-        #     loss_D = bce_loss(D_out, train_utils.make_D_label(pred_label, args.ignore_mask))
-        #     loss_D_value += loss_D/args.iter_size/2
-        # grads = tape.gradient(loss_D, model_D.trainable_variables)
-        # optimizer.apply_gradients(zip(grads, model_D.trainable_variables))
-        # print(loss_ce)
-        # break
+if __name__ == '__main__':
+    train_parser = TrainArgParser()
+    main(train_parser.get_arguments())
 
 
     # trainloader, trainloader_gt, trainloader_remain = train_utils.load_ade20(args) # TODO: wait for dataset
@@ -284,11 +302,6 @@ def visualize_results(images, labels, confidence_maps):
     #     print(end-start,'seconds')
 
 
-def main(args):    
-    train(args)
 
-if __name__ == '__main__':
-    train_parser = TrainArgParser()
-    main(train_parser.get_arguments())
 
 
