@@ -38,8 +38,6 @@ def train_one_step(model, model_D, interp, trainloader_iter, trainloader_gt_iter
     #         loss_semi_adv /= args.iter_size
     #         loss_semi_adv_value += loss_semi_adv.numpy() / args.lambda_semi_adva
 
-
-
 def train(args):
     final_confidence_map = None
     last_images = None
@@ -47,39 +45,110 @@ def train(args):
     train_dataset, val_dataset = preprocess()
     print("===== preprocess complete ======")
     
-    optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=0.00125)
+    optimizer_G = tf.keras.optimizers.legacy.Adam(learning_rate=0.00125)
+    optimizer_D = tf.keras.optimizers.legacy.Adam(learning_rate=0.001)
+    
     deeplab = myDeeplab(((256, 256, 3)))
     reload_pretrained.restore_model_from_checkpoint('model/pretrained/deeplab_resnet.ckpt', deeplab)
     deeplab.trainables = True
+    
+    discriminator = FCDiscriminator(num_classes=2)
+    
     print('====== Start feeding deeplab ===== ')
     for batch in train_dataset:
         images, labels = batch
-        # print("image", images[0])
-        # print("ground truth 1: ", labels[0, :, :, 0])
-        # print("ground truth 2: ", labels[0, :, :, 1])
         last_images = images
         last_labels = labels
         
-        with tf.GradientTape() as tape:
+        with tf.GradientTape() as tape_G:
             batch_confidence_map = deeplab(images, training=True)
             final_confidence_map = batch_confidence_map
-            # print("pred 1: ", batch_confidence_map[0, :, :, 0])
-            # print("pred 2: ", batch_confidence_map[0, :, :, 1])
-            loss_ce = tf.keras.losses.BinaryCrossentropy()(batch_confidence_map, labels)
-            print(f'====== Loss is {loss_ce.numpy()} ===== ')
+            
+            # Forward pass through discriminator
+            D_fake = discriminator(batch_confidence_map)
+            
+            # Calculate adversarial loss for generator (Deeplab)
+            loss_G_adv = tf.keras.losses.BinaryCrossentropy()(tf.zeros_like(D_fake), D_fake)
+            
+            # Calculate Cross-Entropy loss for generator (Deeplab)
+            loss_ce = tf.keras.losses.BinaryCrossentropy()(labels, batch_confidence_map)
+            
+            # Combine adversarial loss and Cross-Entropy loss for generator
+            # TODO Change this 0.1 to lamda g_adv
+            loss_G = loss_ce + 0.1 * loss_G_adv
+            print(f"=== Generator Loss is {loss_G.numpy()} ===")
         
-        gradients = tape.gradient(loss_ce, deeplab.trainable_variables)
-        optimizer.apply_gradients(zip(gradients, deeplab.trainable_variables))
+        # Calculate gradients for generator
+        gradients_G = tape_G.gradient(loss_G, deeplab.trainable_variables)
         
-    print('====== Deeplab Complete===== ')
-
-    # Save the final results from training
+        # Update generator
+        optimizer_G.apply_gradients(zip(gradients_G, deeplab.trainable_variables))
+        
+        with tf.GradientTape() as tape_D:
+            # Forward pass through discriminator
+            D_fake = discriminator(batch_confidence_map)
+            D_real = discriminator(labels)
+            
+            # Calculate adversarial loss for discriminator
+            loss_D_fake = tf.keras.losses.BinaryCrossentropy()(tf.zeros_like(D_fake), D_fake)
+            loss_D_real = tf.keras.losses.BinaryCrossentropy()(tf.ones_like(D_real), D_real)
+            loss_D = (loss_D_fake + loss_D_real) / 2.0
+            print(f"=== Discriminator Loss is {loss_D.numpy()} ===")
+        
+        # Calculate gradients for discriminator
+        gradients_D = tape_D.gradient(loss_D, discriminator.trainable_variables)
+        
+        # Update discriminator
+        optimizer_D.apply_gradients(zip(gradients_D, discriminator.trainable_variables))
+    
     np.save('last_images.npy', last_images)
     np.save('last_labels.npy', last_labels)
     np.save('final_confidence_map.npy', final_confidence_map)
-
-    # visualize with final_confidence_map here
     visualize_saved_results()
+        
+    print('====== Deeplab Complete===== ')
+
+
+# def train(args):
+#     final_confidence_map = None
+#     last_images = None
+#     last_labels = None
+#     train_dataset, val_dataset = preprocess()
+#     print("===== preprocess complete ======")
+    
+#     optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=0.00125)
+#     deeplab = myDeeplab(((256, 256, 3)))
+#     reload_pretrained.restore_model_from_checkpoint('model/pretrained/deeplab_resnet.ckpt', deeplab)
+#     deeplab.trainables = True
+#     print('====== Start feeding deeplab ===== ')
+#     for batch in train_dataset:
+#         images, labels = batch
+#         # print("image", images[0])
+#         # print("ground truth 1: ", labels[0, :, :, 0])
+#         # print("ground truth 2: ", labels[0, :, :, 1])
+#         last_images = images
+#         last_labels = labels
+        
+#         with tf.GradientTape() as tape:
+#             batch_confidence_map = deeplab(images, training=True)
+#             final_confidence_map = batch_confidence_map
+#             # print("pred 1: ", batch_confidence_map[0, :, :, 0])
+#             # print("pred 2: ", batch_confidence_map[0, :, :, 1])
+#             loss_ce = tf.keras.losses.BinaryCrossentropy()(batch_confidence_map, labels)
+#             print(f'====== Loss is {loss_ce.numpy()} ===== ')
+        
+#         gradients = tape.gradient(loss_ce, deeplab.trainable_variables)
+#         optimizer.apply_gradients(zip(gradients, deeplab.trainable_variables))
+        
+#     print('====== Deeplab Complete===== ')
+
+#     # Save the final results from training
+#     np.save('last_images.npy', last_images)
+#     np.save('last_labels.npy', last_labels)
+#     np.save('final_confidence_map.npy', final_confidence_map)
+
+#     # visualize with final_confidence_map here
+#     visualize_saved_results()
 
 '''
 This can be called in main after after training to visualize saved results from the final batch
@@ -130,8 +199,8 @@ def visualize_helper(images, labels, confidence_maps):
     plt.show()
 
 def main(args):    
-    # train(args)
-    visualize_saved_results()
+    train(args)
+    # visualize_saved_results()
 
 if __name__ == '__main__':
     train_parser = TrainArgParser()
