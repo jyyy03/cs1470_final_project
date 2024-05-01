@@ -23,5 +23,6 @@ class FCDiscriminator(tf.keras.Model):
         x = self.conv4(x)
         x = self.leaky_relu(x)
         x = self.classifier(x)
+        x = tf.keras.layers.Softmax()(x)
 
         return x

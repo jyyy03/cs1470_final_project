@@ -77,6 +77,8 @@ def train(args):
             # TODO Change this 0.1 to lamda g_adv
             loss_G = loss_ce + 0.1 * loss_G_adv
             print(f"=== Generator Loss is {loss_G.numpy()} ===")
+            print(f"=== Baseline Accuracy is {tf.keras.metrics.MeanIoU(num_classes = 2)(labels, np.where(batch_confidence_map > 0.5, 0, 1))} ===")
+            
         
         # Calculate gradients for generator
         gradients_G = tape_G.gradient(loss_G, deeplab.trainable_variables)
@@ -94,6 +96,7 @@ def train(args):
             loss_D_real = tf.keras.losses.BinaryCrossentropy()(tf.ones_like(D_real), D_real)
             loss_D = (loss_D_fake + loss_D_real) / 2.0
             print(f"=== Discriminator Loss is {loss_D.numpy()} ===")
+            print(f"=== Discriminator Accuracy is {tf.keras.metrics.MeanIoU(num_classes = 2)(D_real, D_fake)} ===")
         
         # Calculate gradients for discriminator
         gradients_D = tape_D.gradient(loss_D, discriminator.trainable_variables)
@@ -155,16 +158,21 @@ This can be called in main after after training to visualize saved results from 
 '''
 def visualize_saved_results():
     # Change this number to view a different set of 5 images, labels, and confidence maps
-    sample_num = 7
+    sample_num = 6
     last_images = np.load('last_images.npy')
+    print(last_images.shape)
     last_labels = np.load('last_labels.npy')
+    print(last_labels.shape)
     final_confidence_map = np.load('final_confidence_map.npy')
-    visualize_helper(last_images[5*sample_num:5+5*sample_num], last_labels[5*sample_num:5+5*sample_num], final_confidence_map[5*sample_num:5+5*sample_num])
+    print(final_confidence_map.shape)
+    # visualize_helper(last_images[5*sample_num:5+5*sample_num], last_labels[5*sample_num:5+5*sample_num], final_confidence_map[5*sample_num:5+5*sample_num])
+    visualize_helper(last_images[27:32], last_labels[27:32], final_confidence_map[27:32])
 
 '''
 Generates a plot with images, ground truth segmentations, and confidence maps for 5 samples
 '''
 def visualize_helper(images, labels, confidence_maps):
+    print(images.shape)
     num_samples = 5
     plt.figure(figsize=(15, num_samples * 5))
     for i in range(num_samples):
@@ -199,8 +207,8 @@ def visualize_helper(images, labels, confidence_maps):
     plt.show()
 
 def main(args):    
-    train(args)
-    # visualize_saved_results()
+    # train(args)
+    visualize_saved_results()
 
 if __name__ == '__main__':
     train_parser = TrainArgParser()
