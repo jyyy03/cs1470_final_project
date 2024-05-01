@@ -1,5 +1,5 @@
 import tensorflow as tf
-# from tensorflow.keras import layers
+import numpy as np
 
 class FCDiscriminator(tf.keras.Model):
     def __init__(self, num_classes, ndf=64):
@@ -12,6 +12,8 @@ class FCDiscriminator(tf.keras.Model):
         self.classifier = tf.keras.layers.Conv2D(1, kernel_size=4, strides=2, padding='same')
 
         self.leaky_relu = tf.keras.layers.LeakyReLU(alpha=0.2)
+        self.logits_layer = tf.keras.activations.sigmoid
+        self.upsampling = tf.keras.layers.UpSampling2D(size=(32, 32))
 
     def call(self, inputs, training=False):
         x = self.conv1(inputs)
@@ -23,6 +25,7 @@ class FCDiscriminator(tf.keras.Model):
         x = self.conv4(x)
         x = self.leaky_relu(x)
         x = self.classifier(x)
-        x = tf.keras.layers.Softmax()(x)
+        x = self.logits_layer(x)
+        x = self.upsampling(x)
 
         return x
