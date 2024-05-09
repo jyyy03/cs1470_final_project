@@ -29,7 +29,7 @@ def plot_metric_loss(epoch, loss_D, loss_G, iou_G, iou_D):
 
     plt.savefig('loss_metric.png', dpi=300, transparent=True)
 
-def visualize_dataset(dataset, num_samples=5):
+def visualize_dataset(dataset, num_samples=2):
     plt.figure(figsize=(15, num_samples * 5))
     for i, (image, mask) in enumerate(dataset.take(num_samples)):
         
@@ -50,27 +50,22 @@ def visualize_dataset(dataset, num_samples=5):
     plt.show()
 
 
-def visualize_saved_results(sample_num=1):
+def visualize_saved_results(sample_num=2):
     '''
     This can be called in main after after training to visualize saved results from the final batch
     '''
     last_images = np.load('last_images.npy')
-    print(last_images.shape)
     last_labels = np.load('last_labels.npy')
-    print(last_labels.shape)
     final_confidence_map = np.load('final_confidence_map.npy')
-    print(final_confidence_map.shape)
     final_confidence_map_threshold = np.where(final_confidence_map > 0.5, 0,1)
 
-    visualize_helper(last_images[:sample_num-1], last_labels[:sample_num-1], final_confidence_map_threshold[:sample_num-1])
+    visualize_helper(last_images[:sample_num], last_labels[:sample_num], final_confidence_map_threshold[:sample_num])
 
 
-def visualize_helper(images, labels, confidence_maps):
+def visualize_helper(images, labels, confidence_maps, num_samples = 2):
     '''
     Generates a plot with images, ground truth segmentations, and confidence maps for 5 samples
-    '''
-    print(images.shape)
-    num_samples = 3
+    '''    
     plt.figure(figsize=(15, num_samples * 5))
     for i in range(num_samples):
         plt.subplot(num_samples, 5, 5*i + 1)

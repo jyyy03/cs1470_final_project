@@ -21,7 +21,7 @@ def train():
     optimizer_D = tf.keras.optimizers.SGD(learning_rate=0.001)
     
     deeplab = myDeeplab(((256, 256, 3)))
-    reload_pretrained.restore_model_from_checkpoint('model/pretrained/deeplab_resnet.ckpt', deeplab)
+    reload_pretrained.restore_model_from_checkpoint('model/pretrained/Deeplab Resnet.ckpt', deeplab)
     deeplab.trainables = True
     
     discriminator = FCDiscriminator()
@@ -76,7 +76,6 @@ def train():
     for batch in val_dataset:
         images, labels = batch
         batch_confidence_map = deeplab(images, training=True)
-
         last_images = images
         last_labels = labels
         final_confidence_map = batch_confidence_map

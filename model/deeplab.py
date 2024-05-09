@@ -1,6 +1,5 @@
 import tensorflow as tf
-from keras.layers import Input, Conv2D, MaxPooling2D, ZeroPadding2D, BatchNormalization, ReLU, Dropout, Softmax, UpSampling2D, Add
-
+from keras.layers import Input, Conv2D, MaxPooling2D, ZeroPadding2D, BatchNormalization, ReLU, Dropout, Softmax, UpSampling2D
 
 def myDeeplab(input_shape, num_classes= 2):
     """
@@ -54,7 +53,7 @@ def myDeeplab(input_shape, num_classes= 2):
     res = BatchNormalization(name = 'bn2c_branch2b')(res)
     p2 = ReLU()(x + res)
   
-    # Prediction Block
+    # Atrous Block
     b1 = ZeroPadding2D(padding=(6, 6))(p2)
     res5a_branch2a = Conv2D(256, kernel_size=3, dilation_rate=(6, 6), activation='relu', name='res5a_branch2a')
     res5a_branch2a.add_weight(name = 'weights', shape =[1, 1, 1024, 512],initializer='glorot_uniform',trainable=True)
