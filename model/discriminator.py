@@ -1,8 +1,10 @@
 import tensorflow as tf
-import numpy as np
 
 class FCDiscriminator(tf.keras.Model):
-    def __init__(self, num_classes, ndf=64):
+    '''
+    This class represents a fully-convoluational network discriminator.
+    '''
+    def __init__(self, ndf=64):
         super(FCDiscriminator, self).__init__()
 
         self.conv1 = tf.keras.layers.Conv2D(ndf, kernel_size=4, strides=2, padding='same')
